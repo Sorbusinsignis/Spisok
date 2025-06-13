@@ -45,4 +45,139 @@
 
     .item {
       display: flex;
-      justify-conte
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .green { background-color: #d4edda; }
+    .yellow { background-color: #fff3cd; }
+    .red { background-color: #f8d7da; }
+
+    .item span {
+      font-size: 16px;
+      flex: 1;
+    }
+
+    .item button {
+      margin-left: 8px;
+      font-size: 14px;
+      padding: 6px 8px;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+      }
+
+      #addForm button {
+        width: 100%;
+      }
+
+      .item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .item div {
+        margin-top: 8px;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Список продуктов</h2>
+
+  <form id="addForm">
+    <input type="text" id="newItem" placeholder="Новый продукт..." required />
+    <button type="submit">Добавить</button>
+  </form>
+
+  <div id="list"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyACGrXHQTjT7feWwL28hHjhLMhkr8bAgJ8",
+      authDomain: "spisok-c4439.firebaseapp.com",
+      databaseURL: "https://spisok-c4439-default-rtdb.firebaseio.com",
+      projectId: "spisok-c4439",
+      storageBucket: "spisok-c4439.firebasestorage.app",
+      messagingSenderId: "1048720265010",
+      appId: "1:1048720265010:web:fa50807d82b8c8f2f0512b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref("products");
+
+    document.addEventListener("DOMContentLoaded", () => {
+      let products = [];
+
+      const statusClasses = ["green", "yellow", "red"];
+      const statusLabels = ["Есть", "Мало", "Нет"];
+
+      function render() {
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+
+        products.forEach((item, index) => {
+          const div = document.createElement("div");
+          div.className = `item ${statusClasses[item.status]}`;
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = item.name;
+
+          const statusButton = document.createElement("button");
+          statusButton.textContent = statusLabels[item.status];
+          statusButton.onclick = () => {
+            products[index].status = (products[index].status + 1) % 3;
+            db.set(products);
+          };
+
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "❌";
+          deleteButton.onclick = () => {
+            products.splice(index, 1);
+            db.set(products);
+          };
+
+          const controls = document.createElement("div");
+          controls.appendChild(statusButton);
+          controls.appendChild(deleteButton);
+
+          div.appendChild(nameSpan);
+          div.appendChild(controls);
+
+          list.appendChild(div);
+        });
+      }
+
+      db.on("value", snapshot => {
+        products = snapshot.val() || [];
+        render();
+      });
+
+      document.getElementById("addForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const input = document.getElementById("newItem");
+        const name = input.value.trim();
+        if (name) {
+          products.push({ name, status: 0 });
+          db.set(products);
+          input.value = "";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
